@@ -109,6 +109,20 @@ let opRep p period de =
     let pseudophoton = somme_vecteur(mod_vecteur(somme_vecteur(p)(produit_vecteur(0.5)(period)))(period))(produit_vecteur(-0.5)(period))
     in de(pseudophoton);;
 
+let opSymoX p de =
+    let p_bis = {vx=abs_float(p.vx); vy=p.vy; vz= p.vz}
+    in de(p_bis)
+let opSymoY p de =
+    let p_bis = {vx=p.vx; vy=abs_float(p.vy); vz= p.vz}
+    in de(p_bis)
+let opSymoZ p de =
+    let p_bis = {vx=p.vx; vy=p.vy; vz= abs_float(p.vz)}
+    in de(p_bis)
+
+let opSymoXY p = opSymoX(p)(opSymoY)
+
+let opSymoXZ p = opSymoX(p)(opSymoZ)
+
 let planSBF pl p  =
     let (a,b,c,d) = (pl.compA, pl.compB, pl.compC, pl.compD)
     in produit_scalaire(unitaire({vx=a;vy=b;vz=c}))(vecteur(origine)(p)) +. d
@@ -118,9 +132,9 @@ let ma_sphere2 = {centre = {x=0.;y=0.;z= -4.0}; rayon = 0.5};;
 let ma_sphere3 = {centre = {x=5.;y= -2.;z= -3.0}; rayon = 0.5};;
 
 let ma_sphere4 = {centre = {x= 0.5; y= 0.5 ;z= 0.5}; rayon = 0.5};;
+let ma_sphere5 = {centre = {x=2.;y=2.;z= -5.0}; rayon = 1.5};;
 
-
-let mon_plan = {compA= 0.0 ; compB= 0.0;compC= 10.0;compD= 7.0};;
+let mon_plan = {compA= 0.0 ; compB= 0.0;compC= 10.0;compD= 10.0};;
 
 let esp = 0.0005;;
 
@@ -146,7 +160,8 @@ let rayon_parcourt primaire =
                 pas :=  (* min(min(max(sphereDE(photon)(ma_sphere))(-.sphereDE(photon)(ma_sphere2)))(planDE(photon)(mon_plan)))(sphereDE(photon)(ma_sphere3));  (*sphereDE(photon)(ma_sphere); *)
                     (*opRep(photon)({vx=2.0;vy=2.0;vz=2.0})(fun x -> sphereDE(x)(ma_sphere));*)*)
                     (*min(sphereSBF(ma_sphere)(photon_ori))(planSBF(mon_plan)(photon_ori));*)
-                    min(max(sphereSBF(ma_sphere)(photon))(-.sphereSBF(ma_sphere2)(photon)))(planSBF(mon_plan)(photon_ori));
+                    (*min(max(sphereSBF(ma_sphere)(photon))(-.sphereSBF(ma_sphere2)(photon)))(planSBF(mon_plan)(photon_ori));*)
+                    min(opSymoXY(photon)(sphereSBF(ma_sphere5)))(planSBF(mon_plan)(photon_ori));
                 distance := !distance +. !pas;
                 etapes := !etapes + 1
             end
