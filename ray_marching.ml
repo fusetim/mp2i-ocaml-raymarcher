@@ -81,8 +81,8 @@ let rayon_primaire camera x y =
     let (c_origine, dir, fov, hauteur, largeur) = (camera.cam_origine, camera.cam_cible, camera.cam_fov, camera.hauteur, camera.largeur)
     in let aspect_ratio = float_of_int(hauteur)/.float_of_int(largeur)
     in let ajust_fov = tan(deg_rad(fov) /. 2.0);
-    in let sensor_y = ((float_of_int(x) +. 0.5) /. float_of_int(hauteur) *. 2.0 -. 1.0) *. aspect_ratio *.ajust_fov
-    in let sensor_x =  (1.0 -. (float_of_int(y) +. 0.5) /. float_of_int(largeur) *. 2.0)*.ajust_fov
+    in let sensor_y = ((float_of_int(y) +. 0.5) /. float_of_int(largeur) *. 2.0 -. 1.0) *.ajust_fov
+    in let sensor_x =  (1. -. (float_of_int(x) +. 0.5) /. float_of_int(hauteur) *. 2.0)*.ajust_fov  *. aspect_ratio 
     in let (w, u) = (unitaire(dir), unitaire(produit_vectorielle(world.w)(dir)))
     in let v = produit_vectorielle(w)(u)
     in let ndir = unitaire(somme_vecteur(somme_vecteur(produit_vecteur(sensor_x)(u))(produit_vecteur(sensor_y)(v)))(w))
@@ -103,19 +103,21 @@ let sphereDE photon_ sphere_ =
 
 let sphereSBF s p =
 (* Prend la sphère et le vecteur directeur du photon *)
-    distance_points(s.centre)(p) -. s.rayon
+    norme(somme_vecteur(vecteur(origine)(s.centre))(produit_vecteur(-1.)(p))) -. s.rayon
 
-let opRep photon period de =
-    let pseudophoton = difference_vecteur(mod_vecteur(somme_vecteur(vecteur(origine)(photon.photon_origine))(produit_vecteur(0.5)(period)))(period))(produit_vecteur(0.5)(period))
-    in de({photon_origine=origine; photon_direction=pseudophoton});;
+let opRep p period de =
+    let pseudophoton = somme_vecteur(mod_vecteur(somme_vecteur(p)(produit_vecteur(0.5)(period)))(period))(produit_vecteur(-0.5)(period))
+    in de(pseudophoton);;
 
 let planSBF pl p  =
     let (a,b,c,d) = (pl.compA, pl.compB, pl.compC, pl.compD)
     in produit_scalaire(unitaire({vx=a;vy=b;vz=c}))(vecteur(origine)(p)) +. d
 
 let ma_sphere = {centre = {x=0.;y=0.;z= -5.0}; rayon = 1.5};;
-let ma_sphere2 = {centre = {x=0.5;y=0.5;z= -4.0}; rayon = 0.5};;
+let ma_sphere2 = {centre = {x=0.;y=0.;z= -4.0}; rayon = 0.5};;
 let ma_sphere3 = {centre = {x=5.;y= -2.;z= -3.0}; rayon = 0.5};;
+
+let ma_sphere4 = {centre = {x= 0.5; y= 0.5 ;z= 0.5}; rayon = 0.5};;
 
 
 let mon_plan = {compA= 0.0 ; compB= 0.0;compC= 10.0;compD= 7.0};;
@@ -139,11 +141,12 @@ let rayon_parcourt primaire =
                     y = ori.y +. !distance *. dir.vy;
                     z = ori.z +. !distance *. dir.vz
                 }
-            in let photon = {photon_direction=dir; photon_origine= photon_ori }
+            in let photon = vecteur(origine)(photon_ori)
             in begin 
                 pas :=  (* min(min(max(sphereDE(photon)(ma_sphere))(-.sphereDE(photon)(ma_sphere2)))(planDE(photon)(mon_plan)))(sphereDE(photon)(ma_sphere3));  (*sphereDE(photon)(ma_sphere); *)
                     (*opRep(photon)({vx=2.0;vy=2.0;vz=2.0})(fun x -> sphereDE(x)(ma_sphere));*)*)
-                    min(sphereSBF(ma_sphere)(photon_ori))(planSBF(mon_plan)(photon_ori));
+                    (*min(sphereSBF(ma_sphere)(photon_ori))(planSBF(mon_plan)(photon_ori));*)
+                    min(max(sphereSBF(ma_sphere)(photon))(-.sphereSBF(ma_sphere2)(photon)))(planSBF(mon_plan)(photon_ori));
                 distance := !distance +. !pas;
                 etapes := !etapes + 1
             end
@@ -153,18 +156,18 @@ let rayon_parcourt primaire =
     (!trouve, !distance, !etapes)
 
 let dessine camera =
-    for y = 0 to camera.hauteur do 
-        for x = 0 to camera.largeur do 
+    for x = 0 to camera.hauteur do 
+        for y = 0 to camera.largeur do 
             let prim = rayon_primaire(camera)(x)(y)
             in let (trouve, dist, pas) = rayon_parcourt(prim)
-            in let color = if trouve then int_of_float(255.0*.min(float_of_int(pas)/.dist/.2.)(1.0)) else 0
+            in let color = if trouve then int_of_float(255.0*.min(float_of_int(pas)/.dist/.3.)(1.0)) else 0
             in begin
                 (*Printf.printf("pixel x: %d; y: %d; distance parcourue: %f; nombre de pas: %d\n")(x)(y)(dist)(pas);*)
                 set_color(rgb(color)(color)(color));
-                fill_rect(y*1)(x*1)(1)(1)
+                fill_rect(x*1)(y*1)(1)(1)
             end
         done;
-        if (y mod 40 = 0) then
+        if (x mod 40 = 0) then
             synchronize();
     done;;
 
