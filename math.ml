@@ -21,7 +21,7 @@ let unitaire v1 =
     let normev = norme v1 in
         {vx = v1.vx/. normev; vy = v1.vy/. normev; vz = v1.vz/. normev};;
 
-let produit_vectorielle v1 v2 =
+let produit_vectoriel v1 v2 =
     {vx = v1.vy *. v2.vz -. v1.vz *. v2.vy;
     vy = v1.vz *. v2.vx -. v1.vx *. v2.vz;
     vz = v1.vx *. v2.vy -. v1.vy *. v2.vx};;

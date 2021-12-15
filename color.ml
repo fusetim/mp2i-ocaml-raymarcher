@@ -1,12 +1,20 @@
-type color = {r: int; g:int; b:int};;
+type color = {r: float; g:float; b:float};;
 
 let multColor facteur color = 
-    {r=int_of_float(float_of_int(color.r)*.facteur);
-    g=int_of_float(float_of_int(color.g)*.facteur);
-    b=int_of_float(float_of_int(color.b)*.facteur)};;
+    {r=((color.r)*.facteur);
+    g=((color.g)*.facteur);
+    b=((color.b)*.facteur)};;
+
+let mixColor f1 color1 f2 color2 =
+    {r = (color1.r*.f1 +. color2.r*.f2);
+     g = (color1.g*.f1 +. color2.g*.f2);
+     b = (color1.b*.f1 +. color2.b*.f2)};;
 
 let addColor color1 color2 =
-    {r = color1.r + color2.r;
-     g = color1.g + color2.g;
-     b = color1.b + color2.b};;
+    mixColor(0.5)(color1)(0.5)(color2)
 
+let toInvertedGamma color = (
+        int_of_float(sqrt((color.r))*.255.),
+        int_of_float(sqrt((color.g))*.255.),
+        int_of_float(sqrt((color.b))*.255.)
+    );;
