@@ -21,7 +21,7 @@ let x0 = ref 0.
 
 let epsilon = 0.0005;;
 let gradient = 0.002;;
-let shadow = 12.;;
+let shadow = 4.;;
 
 let background = {r=0.3;g=0.3;b=0.9};;
 
@@ -119,13 +119,11 @@ and rayon_couleur scene lights iorI primaire depth =
             in let light_dir_inv = produit_vecteur(-1.)(light_dir)
             and diff, spec = acc
             in let trouve, distance, _, distance_pjpo, distance_pppo  = rayon_parcourt(scene)({photon_origine=light.pos_l; photon_direction=light_dir})
-            in if trouve && distance+.epsilon < norme(vecteur(photon_ori)(light.pos_l)) then
-                acc
-            else let shad = if trouve && distance_pjpo < norme(vecteur(photon_ori)(light.pos_l)) then (shadow*.distance_pppo)/.distance_pjpo else 1.0
-                in let d = max(0.)(produit_scalaire(light_dir_inv)(normale))*.shad 
+            in let shad = (*if trouve && distance < norme(vecteur(photon_ori)(light.pos_l)) then*) (shadow*.distance_pppo)/.distance_pjpo (*else 1.0*)
+                in let d = max(0.)(produit_scalaire(light_dir_inv)(normale))*.shad*.128.
                 in (  
                         diff+.light.intensite_l*.d,
-                        spec +. light.intensite_l*.d*.(max(0.)(produit_scalaire(produit_vecteur(-1.)(unitaire(reflect(light_dir_inv)(normale))))(unitaire(photon))**specExp))
+                        spec +. light.intensite_l*.(max(0.)(produit_scalaire(produit_vecteur(1.)(unitaire(reflect(light_dir)(normale))))(unitaire(photon))**specExp))
                 )
         in let diffuse, specular = List.fold_left(calc_lum)((0.0,0.0))(lights)
         in let intTotal = float_of_int(List.length(lights))
@@ -165,7 +163,7 @@ and rayon_parcourt scene primaire =
     and distance = ref 0.0
     and distance_pppo = ref 10000.0
     and distance_pjpo = ref 10000.0
-    in while ((not !trouve && !etapes < 200) && !distance <= 1000.0) do
+    in while ((not !trouve && !etapes < 100) && !distance <= 1000.0) do
         if ((!pas > epsilon || !pas < -.epsilon)) then
             let photon_ori = avance_photon(ori)(dir)(!distance)
             in let photon = vecteur(origine)(photon_ori)
@@ -240,7 +238,7 @@ let render camera scene lights block_size =
         in while (!blocks < largeur*hauteur) do
             lim := !radius;
             while (!lim > 0) do begin
-                    Thread.create (render_block camera scene lights (!x) (!y) (!x+block_size))(!y+block_size);
+                    render_block camera scene lights (!x) (!y) (!x+block_size) (!y+block_size);
                     x := !x + !x_dir * block_size;
                     y := !y + !y_dir * block_size;
                     blocks := !blocks + 1;
@@ -299,8 +297,8 @@ let sceneObj =
         let sph = sdfIntoSObject( opSub(sphereSDF ma_sphere)(sphereSDF ma_sphere_inner) )
         in sObjWithProperty sph Transparence (TransparenceValeur(0.7));
            sObjWithProperty sph IndiceOptique (IndiceOptiqueValeur(1.5));
-           sObjWithProperty sph Diffusion (DiffusionValeur({r=0.05;g=0.;b=0.6}, 0.1));
-           sObjWithProperty sph Speculaire (SpeculaireValeur({r=0.1;g=0.3;b=1.}, 0.8, 125.));
+           sObjWithProperty sph Diffusion (DiffusionValeur({r=0.05;g=0.;b=0.8}, 0.1));
+           sObjWithProperty sph Speculaire (SpeculaireValeur({r=0.1;g=0.3;b=1.}, 0.8, 125.4));
            sph
     and redSphere = 
         let sph = sdfIntoSObject( (sphereSDF ma_sphere2))
@@ -338,6 +336,7 @@ let lightObj = [
         {pos_l={x= 1.;y= 1.;z= 2.}; intensite_l=1.};
         {pos_l={x= 1.;y= 2.;z= -2.}; intensite_l=0.9};
         {pos_l={x= 0.;y= 0.;z= 8.}; intensite_l=1.0};
+        {pos_l={x= 0.;y= 0.;z= 2.}; intensite_l=1.0};
     ];;
 (*********)
 auto_synchronize false;;
