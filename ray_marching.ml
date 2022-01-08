@@ -1,4 +1,5 @@
 #use "topfind";;
+#thread;;
 #require "graphics";;
 #use "./math.ml";;
 #use "./sdf.ml";;
@@ -121,9 +122,10 @@ and rayon_couleur scene lights iorI primaire depth =
             in if trouve && distance+.epsilon < norme(vecteur(photon_ori)(light.pos_l)) then
                 acc
             else let shad = if trouve && distance_pjpo < norme(vecteur(photon_ori)(light.pos_l)) then (shadow*.distance_pppo)/.distance_pjpo else 1.0
-                in(  
-                        diff+.light.intensite_l*.(max(0.)(produit_scalaire(light_dir)(normale)))*.shad,
-                        spec +. light.intensite_l*.(max(0.)(produit_scalaire(produit_vecteur(-1.)(unitaire(reflect(light_dir_inv)(normale))))(unitaire(photon))**specExp))
+                in let d = max(0.)(produit_scalaire(light_dir_inv)(normale))*.shad 
+                in (  
+                        diff+.light.intensite_l*.d,
+                        spec +. light.intensite_l*.d*.(max(0.)(produit_scalaire(produit_vecteur(-1.)(unitaire(reflect(light_dir_inv)(normale))))(unitaire(photon))**specExp))
                 )
         in let diffuse, specular = List.fold_left(calc_lum)((0.0,0.0))(lights)
         in let intTotal = float_of_int(List.length(lights))
@@ -222,11 +224,12 @@ let render_block camera scene lights x0 y0 xf yf=
                 plot(x)(y)
             end
         done;
-    done;;
+    done;
+    synchronize();;
 
 let render camera scene lights block_size = 
-    let largeur = camera.largeur/20
-    and hauteur = camera.hauteur/20
+    let largeur = camera.largeur/block_size
+    and hauteur = camera.hauteur/block_size
     in let x = ref (camera.hauteur/2)
         and y = ref (camera.largeur/2)
         and lim = ref 1
@@ -237,12 +240,11 @@ let render camera scene lights block_size =
         in while (!blocks < largeur*hauteur) do
             lim := !radius;
             while (!lim > 0) do begin
-                    render_block camera scene lights (!x) (!y) (!x+block_size) (!y+block_size);
+                    Thread.create (render_block camera scene lights (!x) (!y) (!x+block_size))(!y+block_size);
                     x := !x + !x_dir * block_size;
                     y := !y + !y_dir * block_size;
                     blocks := !blocks + 1;
                     lim := !lim - 1;
-                    synchronize()
                 end
             done;
             match (!x_dir, !y_dir, 0 < !x, !x<hauteur, 0 < !y, !y<largeur) with
