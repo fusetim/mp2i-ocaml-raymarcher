@@ -5,15 +5,19 @@
 type propertyName =
     | IndiceOptique
     | Transparence
-    | Couleur;;
+    | Diffusion
+    | Speculaire;;
 
 type property =
     | IndiceOptiqueValeur of float
     | TransparenceValeur of float
-    | CouleurValeur of color;;
+    | DiffusionValeur of color * float
+    | SpeculaireValeur of color * float * float (* couleur, intensité, exposant *);;
     
 type simpleObject = {sdf: (propertyName, property) Hashtbl.t -> vecteur -> float; properties: unit -> (propertyName, property) Hashtbl.t};;
 type complexObject = {inner: simpleObject list};;
+
+type lightObject = {pos_l: point; intensite_l: float};;
 
 let sdfIntoSObject sdf_ =
     let prop = Hashtbl.create(0)
@@ -38,6 +42,10 @@ let sObjUnion sobj1 sobj2 =
 
 let sObjListToCObj sobjs =
     {inner=sobjs};;
+
+let sObjAsSDF obj =
+    obj.sdf(obj.properties());;
+
 
 let cObjWithProperty cobj name value =
     List.iter(fun obj -> sObjWithProperty(obj)(name)(value))(cobj.inner);;

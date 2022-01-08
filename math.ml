@@ -51,6 +51,13 @@ let mod_vecteur v1 vmod =
         vz = mod_float(v1.vz)(vmod.vz);
     };;
 
+let abs_vecteur v1 =
+    {
+        vx = abs_float(v1.vx);
+        vy = abs_float(v1.vy);
+        vz = abs_float(v1.vz)
+    }
+
 let distance_points p1 p2 =
     sqrt((p1.x-.p2.x)**2.+.(p1.y-.p2.y)**2.+.(p1.z-.p2.z)**2.);;
 

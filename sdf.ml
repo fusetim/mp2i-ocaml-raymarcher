@@ -10,6 +10,10 @@ let planSDF pl p  =
     let (a,b,c,d) = (pl.compA, pl.compB, pl.compC, pl.compD)
     in produit_scalaire(unitaire({vx=a;vy=b;vz=c}))(p) +. d;;
 
+(*let boxSDF b p =
+    let q = somme_vecteur(abs_vecteur(p))(produit_vecteur(-1.)(b))
+    in*)
+
 (** OPERATEURS **)
 
 let opRep de period p =
