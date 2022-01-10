@@ -19,7 +19,7 @@ let x0 = ref 0.
   and y0 = ref 0.
   and max_depth = 4;;
 
-let epsilon = 0.0005;;
+let epsilon = 0.05;;
 let gradient = 0.002;;
 let shadow = 120.;;
 
@@ -118,11 +118,11 @@ and rayon_couleur scene lights iorI primaire depth =
             in let light_dir_inv = produit_vecteur(-1.)(light_dir)
             and diff, spec = acc
             in let trouve, distance, _, distance_pjpo, distance_pppo  = rayon_parcourt(scene)({photon_origine=light.pos_l; photon_direction=light_dir})
-            in let shad =  if trouve && distance_pjpo +. 10.*.gradient < norme(vecteur(light.pos_l)(photon_ori)) then ((distance_pppo)/.distance_pjpo) else 1.
-                in let d = (1.-.(max(0.0)(produit_scalaire(light_dir)(normale))))*.shad
+            in let shad = (*if trouve && distance_pjpo < norme(vecteur(light.pos_l)(photon_ori)) then*) ((distance_pppo*.shadow)/.distance_pjpo) (*else 1.*)
+                in let d = (1.-.(produit_scalaire(light_dir_inv)(normale)))*.shad
                 in (  
                         diff+.max(0.0)(min(1.0)(light.intensite_l*.d)),
-                        spec +. light.intensite_l*.d*.min(1.0)((max(0.0)(produit_scalaire(produit_vecteur(1.)(unitaire(reflect(light_dir)(normale))))(unitaire(produit_vecteur(1.)(photon)))**specExp)))
+                        spec +. light.intensite_l*.d*.min(1.0)((max(0.0)(produit_scalaire(produit_vecteur(-1.)(unitaire(reflect(light_dir)(normale))))(unitaire(produit_vecteur(1.)(photon)))**specExp)))
                 )
         in let diffuse, specular = List.fold_left(calc_lum)((0.0,0.0))(lights)
         in let intTotal = float_of_int(List.length(lights))
@@ -301,9 +301,9 @@ let planOZ = {compA= 0. ; compB= 0.0;compC= 1.0;compD= 7.0};;
 let sceneObj =
     let glassSphere = 
         let sph = sdfIntoSObject( sphereSDF ma_sphere )
-        in sObjWithProperty sph Transparence (TransparenceValeur(0.7));
+        in sObjWithProperty sph Transparence (TransparenceValeur(0.4));
            sObjWithProperty sph IndiceOptique (IndiceOptiqueValeur(1.5));
-           sObjWithProperty sph Diffusion (DiffusionValeur({r=0.05;g=0.;b=0.8}, 0.1));
+           sObjWithProperty sph Diffusion (DiffusionValeur({r=0.05;g=0.;b=0.8}, 0.9));
            sObjWithProperty sph Speculaire (SpeculaireValeur({r=0.1;g=0.3;b=1.}, 0.8, 125.4));
            sph
     and redSphere = 
@@ -325,8 +325,8 @@ let sceneObj =
            sph
     and planZ = 
         let plan = sdfIntoSObject(planSDF planOZ)
-        in sObjWithProperty plan Diffusion (DiffusionValeur({r=0.9;g=0.9;b=0.9}, 0.9));
-           sObjWithProperty plan Speculaire (SpeculaireValeur({r=1.;g=1.;b=1.}, 0.5, 125.));
+        in sObjWithProperty plan Diffusion (DiffusionValeur({r=0.3;g=0.3;b=0.9}, 0.9));
+           sObjWithProperty plan Speculaire (SpeculaireValeur({r=0.3;g=0.3;b=6.}, 0.5, 125.));
            plan
     in sObjListToCObj([
         (*sdfIntoSObject(planSDF planOX);
@@ -339,8 +339,8 @@ let sceneObj =
     ]);;           
 
 let lightObj = [
-        (*{pos_l={x= 1.;y= 1.;z= 2.}; intensite_l=1.};
-        {pos_l={x= 1.;y= 2.;z= -2.}; intensite_l=0.9};*)
+        {pos_l={x= 1.;y= 1.;z= 2.}; intensite_l=1.};
+        {pos_l={x= 1.;y= 2.;z= -2.}; intensite_l=0.9};
         {pos_l={x= -2.;y= -2.;z= 4.}; intensite_l=1.0};
         {pos_l={x= 0.;y= -6.;z= 4.}; intensite_l=1.0};
     ];;
