@@ -133,9 +133,9 @@ and rayon_couleur scene lights iorI primaire depth =
         and mix_s =  mixColor(k_spec/.k)(specColor)(1.-.(k_spec/.k))({r=1.;g=1.;b=1.})
         in let mix =  (*mixColor(k_diff/.k)(diffColor)(k_spec/.k)(specColor)*)
             {
-                r=min(1.0)(max(0.0)(diffuse*.diffColor.r+.specular*.specColor.r));
-                g=min(1.0)(max(0.0)(diffuse*.diffColor.g+.specular*.specColor.g));
-                b=min(1.0)(max(0.0)(diffuse*.diffColor.b+.specular*.specColor.b))
+                r=min(1.0)(max(0.0)((0.2+.diffuse)*.diffColor.r+.specular*.specColor.r));
+                g=min(1.0)(max(0.0)((0.2+.diffuse)*.diffColor.g+.specular*.specColor.g));
+                b=min(1.0)(max(0.0)((0.2+.diffuse)*.diffColor.b+.specular*.specColor.b))
             }
         (*in let mix _d= multColor(diffI*.diffuse/.intTotal)(diffColor)
         in let mix = multColor(specular*.specI/.intTotal)(specColor)*)
@@ -303,8 +303,8 @@ let sceneObj =
         let sph = sdfIntoSObject( sphereSDF ma_sphere )
         in sObjWithProperty sph Transparence (TransparenceValeur(0.4));
            sObjWithProperty sph IndiceOptique (IndiceOptiqueValeur(1.5));
-           sObjWithProperty sph Diffusion (DiffusionValeur({r=0.05;g=0.;b=0.8}, 0.9));
-           sObjWithProperty sph Speculaire (SpeculaireValeur({r=0.1;g=0.3;b=1.}, 0.8, 125.4));
+           sObjWithProperty sph Diffusion (DiffusionValeur({r=0.05;g=0.1;b=0.8}, 0.9));
+           sObjWithProperty sph Speculaire (SpeculaireValeur({r=0.1;g=0.3;b=0.8}, 0.8, 125.4));
            sph
     and redSphere = 
         let sph = sdfIntoSObject( (sphereSDF ma_sphere2))
