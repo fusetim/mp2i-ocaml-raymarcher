@@ -21,7 +21,7 @@ let x0 = ref 0.
 
 let epsilon = 0.0005;;
 let gradient = 0.002;;
-let shadow = 4.;;
+let shadow = 120.;;
 
 let background = {r=0.3;g=0.3;b=0.9};;
 
@@ -51,8 +51,6 @@ let estimeNormale sdf p =
     and y_axis = sdf({vx=p.vx;vy=p.vy+.gradient;vz=p.vz}) -. sdf({vx=p.vx;vy=p.vy-.gradient;vz=p.vz})
     and z_axis = sdf({vx=p.vx;vy=p.vy;vz=p.vz+.gradient}) -. sdf({vx=p.vx;vy=p.vy;vz=p.vz-.gradient})
     in unitaire({vx=x_axis;vy=y_axis;vz=z_axis});;
-
-(*let fresnel =*)
 
 let reflect incident normale = 
     (* Calcul de la direction du rayon réflechi (un peu de trigo en somme) *)
@@ -116,22 +114,30 @@ and rayon_couleur scene lights iorI primaire depth =
         and (DiffusionValeur(diffColor, diffI), SpeculaireValeur(specColor, specI, specExp)) = (Option.get(sObjGetProperty(nearest)(Diffusion)), Option.get(sObjGetProperty(nearest)(Speculaire)))
         in let calc_lum acc light = 
             let light_dir = unitaire(vecteur(light.pos_l)(photon_ori))
+            and light_dist = norme(vecteur(photon_ori)(light.pos_l))
             in let light_dir_inv = produit_vecteur(-1.)(light_dir)
             and diff, spec = acc
             in let trouve, distance, _, distance_pjpo, distance_pppo  = rayon_parcourt(scene)({photon_origine=light.pos_l; photon_direction=light_dir})
-            in let shad = (*if trouve && distance < norme(vecteur(photon_ori)(light.pos_l)) then*) (shadow*.distance_pppo)/.distance_pjpo (*else 1.0*)
-                in let d = max(0.)(produit_scalaire(light_dir_inv)(normale))*.shad*.128.
+            in let shad =  if trouve && distance_pjpo +. 10.*.gradient < norme(vecteur(light.pos_l)(photon_ori)) then ((distance_pppo)/.distance_pjpo) else 1.
+                in let d = (1.-.(max(0.0)(produit_scalaire(light_dir)(normale))))*.shad
                 in (  
-                        diff+.light.intensite_l*.d,
-                        spec +. light.intensite_l*.(max(0.)(produit_scalaire(produit_vecteur(1.)(unitaire(reflect(light_dir)(normale))))(unitaire(photon))**specExp))
+                        diff+.max(0.0)(min(1.0)(light.intensite_l*.d)),
+                        spec +. light.intensite_l*.d*.min(1.0)((max(0.0)(produit_scalaire(produit_vecteur(1.)(unitaire(reflect(light_dir)(normale))))(unitaire(produit_vecteur(1.)(photon)))**specExp)))
                 )
         in let diffuse, specular = List.fold_left(calc_lum)((0.0,0.0))(lights)
         in let intTotal = float_of_int(List.length(lights))
-        in let k_spec = max(0.0)(specular*.specI/.intTotal)
-        and k_diff = max(0.0)(diffuse*.diffI/.intTotal)
-        in let k = max(0.001)(k_spec+.k_diff)
-        in let mix =  mixColor(k_diff/.k)(diffColor)(k_spec/.k)(specColor)
-        (*in let mix = multColor(diffI*.diffuse/.intTotal)(diffColor)
+        in let k_spec = max(0.0)(specular*.specI)
+        and k_diff = max(0.0)(diffuse*.diffI)
+        in let k = (*(k_spec+.k_diff)*) intTotal
+        in let mix_d =  mixColor(k_diff/.k)(diffColor)(1.-.(k_diff/.k))({r=0.;g=0.;b=0.})
+        and mix_s =  mixColor(k_spec/.k)(specColor)(1.-.(k_spec/.k))({r=1.;g=1.;b=1.})
+        in let mix =  (*mixColor(k_diff/.k)(diffColor)(k_spec/.k)(specColor)*)
+            {
+                r=min(1.0)(max(0.0)(diffuse*.diffColor.r+.specular*.specColor.r));
+                g=min(1.0)(max(0.0)(diffuse*.diffColor.g+.specular*.specColor.g));
+                b=min(1.0)(max(0.0)(diffuse*.diffColor.b+.specular*.specColor.b))
+            }
+        (*in let mix _d= multColor(diffI*.diffuse/.intTotal)(diffColor)
         in let mix = multColor(specular*.specI/.intTotal)(specColor)*)
         in if (depth < max_depth && Option.is_some(sObjGetProperty(nearest)(Diffusion))) then
             match sObjGetProperty(nearest)(Transparence) with 
@@ -294,7 +300,7 @@ let planOZ = {compA= 0. ; compB= 0.0;compC= 1.0;compD= 7.0};;
 
 let sceneObj =
     let glassSphere = 
-        let sph = sdfIntoSObject( opSub(sphereSDF ma_sphere)(sphereSDF ma_sphere_inner) )
+        let sph = sdfIntoSObject( sphereSDF ma_sphere )
         in sObjWithProperty sph Transparence (TransparenceValeur(0.7));
            sObjWithProperty sph IndiceOptique (IndiceOptiqueValeur(1.5));
            sObjWithProperty sph Diffusion (DiffusionValeur({r=0.05;g=0.;b=0.8}, 0.1));
@@ -333,10 +339,10 @@ let sceneObj =
     ]);;           
 
 let lightObj = [
-        {pos_l={x= 1.;y= 1.;z= 2.}; intensite_l=1.};
-        {pos_l={x= 1.;y= 2.;z= -2.}; intensite_l=0.9};
-        {pos_l={x= 0.;y= 0.;z= 8.}; intensite_l=1.0};
-        {pos_l={x= 0.;y= 0.;z= 2.}; intensite_l=1.0};
+        (*{pos_l={x= 1.;y= 1.;z= 2.}; intensite_l=1.};
+        {pos_l={x= 1.;y= 2.;z= -2.}; intensite_l=0.9};*)
+        {pos_l={x= -2.;y= -2.;z= 4.}; intensite_l=1.0};
+        {pos_l={x= 0.;y= -6.;z= 4.}; intensite_l=1.0};
     ];;
 (*********)
 auto_synchronize false;;
