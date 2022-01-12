@@ -19,7 +19,7 @@ let x0 = ref 0.
   and y0 = ref 0.
   and max_depth = 4;;
 
-let epsilon = 0.05;;
+let epsilon = 0.005;;
 let gradient = 0.002;;
 let shadow = 120.;;
 
@@ -59,10 +59,10 @@ let reflect incident normale =
 let refract iorI_ iorR_ incident normale_ =
     (* Calcul de la direction du rayon refracté s'il existe (réflexion totale) *)
     let cosi = max(-1.)(min(1.0)(produit_scalaire(unitaire(normale_))(unitaire(incident))))
-    in let iorI = if cosi > 0. then iorR_ else iorI_
-    and iorR = if cosi > 0. then iorI_ else iorR_
-    and normale = if cosi > 0. then produit_vecteur(-1.)(normale_) else normale_
-    and cosi_ = if cosi > 0. then cosi else -.cosi
+    in let iorI = if cosi > 0. then iorI_ else iorR_
+    and iorR = if cosi > 0. then iorR_ else iorI_
+    and normale = if cosi > 0. then normale_ else  produit_vecteur(-1.)(normale_)
+    and cosi_ = if cosi < 0. then -.cosi else cosi
     in 
         let eta = iorI/.iorR
         in let k = 1. -. (eta *. eta *. (1. -. (cosi_ *. cosi_))) (* k = 1 - eta^2 x (1 - cosi²)*)
@@ -71,13 +71,13 @@ let refract iorI_ iorR_ incident normale_ =
             (*Some({vx=1.;vy=0.;vz=0.}) (* TEMPORAIRE!! *)*)
         else 
             (* eta x I + eta x cosi x sqrt(k) * N *)
-            Some(somme_vecteur (produit_vecteur(eta)(incident)) (produit_vecteur(-.eta*.cosi_*.sqrt(k))(normale)))
+            Some(somme_vecteur (produit_vecteur(eta)(incident)) (produit_vecteur(eta*.cosi_ -. sqrt(k))(normale)))
 
 let fresnel iorI_ iorR_ incident normale = 
     (* Équation de fresnel, permet de calculer le coefficient de réflectivité par rapport à l'angle d'incidence *)
     let cosi = produit_scalaire(unitaire(normale))(unitaire(incident))
-    in let iorI = if cosi > 0. then iorR_ else iorI_
-    and iorR = if cosi > 0. then iorI_ else iorR_
+    in let iorI = if cosi > 0. then iorI_ else iorR_
+    and iorR = if cosi > 0. then iorR_ else iorI_
     in
     let sint = iorI/.iorR*.sqrt(max(0.)(1. -. cosi *.cosi))
         in if sint >= 1. then 
@@ -118,11 +118,11 @@ and rayon_couleur scene lights iorI primaire depth =
             in let light_dir_inv = produit_vecteur(-1.)(light_dir)
             and diff, spec = acc
             in let trouve, distance, _, distance_pjpo, distance_pppo  = rayon_parcourt(scene)({photon_origine=light.pos_l; photon_direction=light_dir})
-            in let shad = (*if trouve && distance_pjpo < norme(vecteur(light.pos_l)(photon_ori)) then*) ((distance_pppo*.shadow)/.distance_pjpo) (*else 1.*)
-                in let d = (1.-.(produit_scalaire(light_dir_inv)(normale)))*.shad
+            in let shad = if trouve && distance_pjpo < norme(vecteur(light.pos_l)(photon_ori)) then ((distance_pppo*.shadow)/.distance_pjpo) else 1.
+                in let d = max(0.0)(min(1.0)(((produit_scalaire(light_dir_inv)(normale)))*.shad))
                 in (  
-                        diff+.max(0.0)(min(1.0)(light.intensite_l*.d)),
-                        spec +. light.intensite_l*.d*.min(1.0)((max(0.0)(produit_scalaire(produit_vecteur(-1.)(unitaire(reflect(light_dir)(normale))))(unitaire(produit_vecteur(1.)(photon)))**specExp)))
+                        diff+.light.intensite_l*.d,
+                        spec +. light.intensite_l*.min(1.0)((max(0.0)(d*.produit_scalaire(produit_vecteur(1.)(unitaire(reflect(light_dir)(normale))))(unitaire(produit_vecteur(1.)(photon)))**specExp)))
                 )
         in let diffuse, specular = List.fold_left(calc_lum)((0.0,0.0))(lights)
         in let intTotal = float_of_int(List.length(lights))
@@ -133,9 +133,9 @@ and rayon_couleur scene lights iorI primaire depth =
         and mix_s =  mixColor(k_spec/.k)(specColor)(1.-.(k_spec/.k))({r=1.;g=1.;b=1.})
         in let mix =  (*mixColor(k_diff/.k)(diffColor)(k_spec/.k)(specColor)*)
             {
-                r=min(1.0)(max(0.0)((0.2+.diffuse)*.diffColor.r+.specular*.specColor.r));
-                g=min(1.0)(max(0.0)((0.2+.diffuse)*.diffColor.g+.specular*.specColor.g));
-                b=min(1.0)(max(0.0)((0.2+.diffuse)*.diffColor.b+.specular*.specColor.b))
+                r=min(1.0)(max(0.0)(((0.2+.diffuse)*.diffColor.r+.specular*.specColor.r(*+.normale.vx*))/.intTotal));
+                g=min(1.0)(max(0.0)(((0.2+.diffuse)*.diffColor.g+.specular*.specColor.g(*+.normale.vy*))/.intTotal));
+                b=min(1.0)(max(0.0)(((0.2+.diffuse)*.diffColor.b+.specular*.specColor.b(*+.normale.vz*))/.intTotal))
             }
         (*in let mix _d= multColor(diffI*.diffuse/.intTotal)(diffColor)
         in let mix = multColor(specular*.specI/.intTotal)(specColor)*)
@@ -169,7 +169,7 @@ and rayon_parcourt scene primaire =
     and distance = ref 0.0
     and distance_pppo = ref 10000.0
     and distance_pjpo = ref 10000.0
-    in while ((not !trouve && !etapes < 100) && !distance <= 1000.0) do
+    in while ((not !trouve && !etapes < 200) && !distance <= 1000.0) do
         if ((!pas > epsilon || !pas < -.epsilon)) then
             let photon_ori = avance_photon(ori)(dir)(!distance)
             in let photon = vecteur(origine)(photon_ori)
@@ -301,10 +301,10 @@ let planOZ = {compA= 0. ; compB= 0.0;compC= 1.0;compD= 7.0};;
 let sceneObj =
     let glassSphere = 
         let sph = sdfIntoSObject( sphereSDF ma_sphere )
-        in sObjWithProperty sph Transparence (TransparenceValeur(0.4));
+        in sObjWithProperty sph Transparence (TransparenceValeur(0.5));
            sObjWithProperty sph IndiceOptique (IndiceOptiqueValeur(1.5));
-           sObjWithProperty sph Diffusion (DiffusionValeur({r=0.05;g=0.1;b=0.8}, 0.9));
-           sObjWithProperty sph Speculaire (SpeculaireValeur({r=0.1;g=0.3;b=0.8}, 0.8, 125.4));
+           sObjWithProperty sph Diffusion (DiffusionValeur({r=0.3;g=1.;b=0.1}, 0.1));
+           sObjWithProperty sph Speculaire (SpeculaireValeur({r=0.1;g=1.;b=0.1}, 0.9, 1425.));
            sph
     and redSphere = 
         let sph = sdfIntoSObject( (sphereSDF ma_sphere2))
@@ -326,7 +326,7 @@ let sceneObj =
     and planZ = 
         let plan = sdfIntoSObject(planSDF planOZ)
         in sObjWithProperty plan Diffusion (DiffusionValeur({r=0.3;g=0.3;b=0.9}, 0.9));
-           sObjWithProperty plan Speculaire (SpeculaireValeur({r=0.3;g=0.3;b=6.}, 0.5, 125.));
+           sObjWithProperty plan Speculaire (SpeculaireValeur({r=0.3;g=0.3;b=0.3}, 0.5, 125.));
            plan
     in sObjListToCObj([
         (*sdfIntoSObject(planSDF planOX);

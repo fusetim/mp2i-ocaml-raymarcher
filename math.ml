@@ -59,6 +59,6 @@ let abs_vecteur v1 =
     }
 
 let distance_points p1 p2 =
-    sqrt((p1.x-.p2.x)**2.+.(p1.y-.p2.y)**2.+.(p1.z-.p2.z)**2.);;
+    sqrt((p2.x-.p1.x)**2.+.(p2.y-.p1.y)**2.+.(p2.z-.p1.z)**2.);;
 
 let deg_rad deg = deg*.Float.pi/.180.0
