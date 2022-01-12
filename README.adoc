@@ -1,0 +1,68 @@
+= OCaml RayMarcher
+> Un DM d'informatique assez conséquent =)
+
+[abstract]
+Petit projet de ray-marcher (ou "marcheur de rayon"), DM n°3 d'informatique de MP2I. 
+À l'évidence, ce ray-marcher commet des erreurs notamment aux niveaux de la gestion des couleurs, il n'est pas idéal mais produit un rendu plutôt sympa qui n'est certe pas le meilleur possible, ni le plus fidèle que l'on peut trouver.
+
+__À ce jour, il implémente :__
+
+- [x] Peut marcher le long des rayons
+- [x] Les SDF (Signed Distance Function) des sphères et plans sont implémentés et utilisables
+- [x] Quelques opérations élémentaires de constructions boolean (Union, Intersection, Soustraction) d'objet sont disponibles
+- [x] Modèle de Phong implémenté pour la lumière (speculaire et diffuse)
+- [ ] Les "ombres douces" (soft-shadow) sont implémentées mais ne marchent pas comme elle devrait malgré divers efforts
+- [x] Les rayons réfractés et refléchies sont calculés et intégrés à la couleur finale du pixel si l'objet est transparent.
+- [ ] Avoir des objets uniquement réflechissant comme les métals
+- [x] Équations de Fresnel pour le mix des couleurs de réflexion/réfraction
+- [x] Correction du Gamma 
+
+__Quelques pistes d'améliorations :__
+
+- Faire marcher les ombres
+- Avoir des métaux ou objets réfléchissants
+- Supporter les Bump Map / Displacement Map (pour donner du relief a des objets facilement à partir d'une image)
+- Utiliser une image de fond (HDRI Environment Map)
+- Proposer quelques objets plus intéressants 
+
+[NOTE]
+Certaines fonctions ne marchent pas. La lumière est très capricieuse. Au dernière nouvelle, le mix des couleurs est faux car il apparait soustractif plutôt qu'additif. 
+
+[NOTE]
+Mon meilleur Franglais est inclus dans ce projet, notamment dans le code et dans les commits mais en espérant qu'il se soit éloigné des commentaires.
+
+## Glossaire
+
+* Soft-Shadow: Ombre / Ombrage qui n'est pas uniquement binaire mais prend en compte la pénombre d'un objet.
+* SDF/DE: SDF signifie *Signed Distance Function*, elle est dite signée car elle représente en positif la distance d'un point à l'extérieur d'un objet, et en négatif la distance d'un point à l'intérieur d'un objet. DE signifie *Distance Estimator*, elle désigne une fonction qui estime la distance d'un point par rapport à un objet. Elle peut n'être qu'une estimation dans le sens où elle représente presque ou de façon sûre l'objet voulu. Ici les deux termes sont interchangeable car on utilise pas le fait que la fonction soit signée ou non, nisi elle approxime ou non l'objet.
+
+## Comment le lancer ?
+
+Bonne question, et bien si lancer la commande `ocaml ./ray_marcher.ml` suffit soyez heureux :)
+
+Sinon, vous auriez peut-être besoin de modifier les paramètres Graphics, ici :
+
+.ray_marching.ml (lignes 9-10):
+[source,lang=ocaml]
+open Graphics;;
+open_graph ":0";;
+
+Si ça ne suffit pas, et bien _Good Luck, cuz' It Works On My Machine_.
+
+### Plateformes supportées
+
+[WARNING]
+Aucun support ne sera assuré pour les autres plateformes que le PC du correcteur.
+
+* Mon propre ordinateur portable :
+ - system: `"x86_64-linux"`
+ - host os: `Linux 5.10.87, NixOS, 21.11 (Porcupine)`
+ - multi-user?: `yes`
+ - sandbox: `yes`
+ - version: `nix-env (Nix) 2.5.0pre20211206_d1aaa7e`
+ - channels(fusetim): `""`
+ - nixpkgs: `/nix/var/nix/profiles/per-user/root/channels/nixos`
+
+## Licence
+
+À venir après rendu =)
