@@ -10,10 +10,10 @@ __À ce jour, il implémente :__
 - [x] Peut marcher le long des rayons
 - [x] Les SDF (Signed Distance Function) des sphères et plans sont implémentés et utilisables
 - [x] Quelques opérations élémentaires de constructions boolean (Union, Intersection, Soustraction) d'objet sont disponibles
-- [x] Modèle de Phong implémenté pour la lumière (speculaire et diffuse)
+- [x] Modèle de Phong implémenté pour la lumière (spéculaire et diffuse)
 - [ ] Les "ombres douces" (soft-shadow) sont implémentées mais ne marchent pas comme elle devrait malgré divers efforts
 - [x] Les rayons réfractés et refléchies sont calculés et intégrés à la couleur finale du pixel si l'objet est transparent.
-- [ ] Avoir des objets uniquement réflechissant comme les métals
+- [ ] Avoir des objets uniquement réfléchissant comme les métals
 - [x] Équations de Fresnel pour le mix des couleurs de réflexion/réfraction
 - [x] Correction du Gamma 
 
@@ -26,7 +26,7 @@ __Quelques pistes d'améliorations :__
 - Proposer quelques objets plus intéressants 
 
 [NOTE]
-Certaines fonctions ne marchent pas. La lumière est très capricieuse. Au dernière nouvelle, le mix des couleurs est faux car il apparait soustractif plutôt qu'additif. 
+Certaines fonctions ne marchent pas. La lumière est très capricieuse. Aux dernières nouvelles, le mix des couleurs est faux car il apparait soustractif plutôt qu'additif. 
 
 [NOTE]
 Mon meilleur Franglais est inclus dans ce projet, notamment dans le code et dans les commits mais en espérant qu'il se soit éloigné des commentaires.
